@@ -1,2 +1,3 @@
-#注释
-dadadassdasdadasdazxcxzczcassmfgkg;mglgj
+# cookie，每行一个
+# #号表示注释
+this is cookie
