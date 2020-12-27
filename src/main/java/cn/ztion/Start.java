@@ -40,7 +40,7 @@ public class Start {
                         int interval = random.nextInt((3*60*60*1000-1*60*60*1000)+1)+1*60*60*1000;
                         try {
                             Thread.sleep(interval);
-                            ApiTakumi.signIn(cookies);
+                            ApiTakumi.signIn(roles);
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
