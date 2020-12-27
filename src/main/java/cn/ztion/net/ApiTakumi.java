@@ -59,21 +59,27 @@ public class ApiTakumi {
             try {
                 Response response = call.execute();
                 if (response.isSuccessful()) {
-                    JSONObject jo = JSONObject.parseObject(response.body().string()).getJSONObject("data")
-                            .getJSONArray("list")
-                            .getJSONObject(0);
-                    GameRole role = new GameRole();
-                    role.setCookie(item).setNickname(jo.getString("nickname"))
-                            .setGame_biz(jo.getString("game_biz"))
-                            .setLevel(jo.getInteger("level"))
-                            .setGameUid(jo.getLong("game_uid"))
-                            .setRegion_name(jo.getString("region_name"))
-                            .setRegion(jo.getString("region"));
-                    logger.info("加载到角色:'" + jo.getString("nickname") + "',UID:" + jo.getLong("game_uid"));
-                    roles.add(role);
+                    JSONObject ret=JSONObject.parseObject(response.body().string());
+                    if("OK".equals(ret.getString("message"))){
+                        JSONObject jo = ret.getJSONObject("data")
+                                .getJSONArray("list")
+                                .getJSONObject(0);
+                        GameRole role = new GameRole();
+                        role.setCookie(item).setNickname(jo.getString("nickname"))
+                                .setGame_biz(jo.getString("game_biz"))
+                                .setLevel(jo.getInteger("level"))
+                                .setGameUid(jo.getLong("game_uid"))
+                                .setRegion_name(jo.getString("region_name"))
+                                .setRegion(jo.getString("region"));
+                        logger.info("加载到角色:'" + jo.getString("nickname") + "',UID:" + jo.getLong("game_uid"));
+                        roles.add(role);
+                    }else{
+                        logger.info("游戏角色加载失败");
+                    }
+
                 }
             } catch (IOException e) {
-                logger.info("游戏角色加载失败!");
+                logger.info("游戏角色加载错误!");
                 e.printStackTrace();
             }
         });
