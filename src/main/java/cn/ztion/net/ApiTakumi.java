@@ -113,7 +113,7 @@ public class ApiTakumi {
     public static String getDS() {
         Random random = new Random();
         int nextInt = random.nextInt(15);
-        String a = DigestUtils.md5Hex(Res.app_version);
+        String a = "h8w582wxwgqvahcdkpvdhbh2w9casgfl";
         String b = new Date().getTime() + "";
         b = b.substring(0, 10);
         String c = UUID.randomUUID().toString().replace("-", "").substring(nextInt, nextInt + 6);
