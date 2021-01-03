@@ -1,6 +1,11 @@
 package cn.ztion.net;
 
 import cn.ztion.entity.GameRole;
+import cn.ztion.entity.Result;
+import cn.ztion.entity.Reward;
+import cn.ztion.entity.User;
+import cn.ztion.tools.Sender;
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import okhttp3.*;
 import org.apache.log4j.Logger;
@@ -14,66 +19,134 @@ public class ApiTakumi {
     static Logger logger = Logger.getLogger(ApiTakumi.class);
     static OkHttpClient client = new OkHttpClient();
 
-    public static void signIn(List<GameRole> roles) {
-        logger.info("开始签到");
-        AtomicInteger num = new AtomicInteger();
-        roles.forEach(role -> {
-            logger.info("-----------------------");
-            logger.info("开始签到角色:" + role.getNickname());
-            JSONObject data = new JSONObject();
-            data.put("act_id", Res.act_id);
-            data.put("region", Res.region);
-            data.put("uid", role.getGameUid());
-            Request request = new Request.Builder()
-                    .url(Res.signUrl)
-                    .post(RequestBody.create(data.toJSONString(), Res.JSON_TYPE))
-                    .headers(getHeaders(role.getCookie()))
-                    .build();
-            Call call = client.newCall(request);
-            try {
-                Response response = call.execute();
-                if (response.isSuccessful()) {
-                    String ok = "{\"retcode\":0,\"message\":\"OK\",\"data\":{\"code\":\"ok\"}}";
-                    JSONObject jo = JSONObject.parseObject(response.body().string());
-                    logger.info(role.getNickname() + " 签到结果: "
-                            + (("OK".equals(jo.getString("message"))) ? "签到成功" : jo.getString("message")));
-                    num.getAndIncrement();
+    public static Integer getSignDay(GameRole role) {
+        String url = Res.signDay;
+        url = url.replace("{region}", role.getRegion())
+                .replace("{uid}", role.getGameUid().toString())
+                .replace("{act_id}", Res.act_id);
+        Request request = new Request.Builder()
+                .url(url)
+                .headers(getHeaders(role.getCookie()))
+                .build();
+        Call call = client.newCall(request);
+        try {
+            Response response = call.execute();
+            if (response.isSuccessful()) {
+                if ("OK".equals(response.message())) {
+                    JSONObject jo = JSONObject.parseObject(response.body().string()).getJSONObject("data");
+                    Integer day = jo.getInteger("total_sign_day");
+                    return day;
                 }
-            } catch (Exception e) {
-                e.printStackTrace();
             }
-        });
-        logger.info("-----------------------");
-        logger.info("总共签到数量:" + roles.size() + ",成功返回数量:" + num);
+        } catch (Exception e) {
+            logger.info("获取签到信息失败");
+        }
+        return null;
     }
 
-    public static List<GameRole> getRoles(List<String> cookies) {
+    public static void getSignInfo(String cookie) {
+        logger.info("获取签到奖励列表");
+        Request request = new Request.Builder()
+                .url(Res.signInfo)
+                .headers(getHeaders(cookie))
+                .build();
+        Call call = client.newCall(request);
+        try {
+            Response response = call.execute();
+            if (response.isSuccessful()) {
+                if ("OK".equals(response.message())) {
+                    JSONObject jo = JSONObject.parseObject(response.body().string());
+                    JSONArray jsonArray = jo.getJSONObject("data").getJSONArray("awards");
+                    jsonArray.forEach(object -> {
+                        JSONObject award = JSONObject.parseObject(object.toString());
+                        Reward reward = new Reward()
+                                .setName(award.getString("name"))
+                                .setIcon(award.getString("icon"))
+                                .setCnt(award.getInteger("cnt"));
+                        Res.rewards.add(reward);
+                    });
+                }
+            }
+        } catch (Exception e) {
+            logger.info("获取签到奖励列表失败");
+        }
+    }
+
+    public static void signIn(List<User> users) {
+        logger.info("开始签到");
+        AtomicInteger num = new AtomicInteger();
+        users.forEach(user -> {
+            List<Result> list = new ArrayList<>();
+            user.getRole().forEach(role -> {
+                logger.info("-----------------------");
+                logger.info("开始签到角色:" + role.getNickname());
+                JSONObject data = new JSONObject();
+                data.put("act_id", Res.act_id);
+                data.put("region", role.getRegion());
+                data.put("uid", role.getGameUid());
+                Request request = new Request.Builder()
+                        .url(Res.signUrl)
+                        .post(RequestBody.create(data.toJSONString(), Res.JSON_TYPE))
+                        .headers(getHeaders(role.getCookie()))
+                        .build();
+                Call call = client.newCall(request);
+                try {
+                    Response response = call.execute();
+                    if (response.isSuccessful()) {
+                        JSONObject jo = JSONObject.parseObject(response.body().string());
+//                        System.out.println(user);
+                        logger.info(role.getNickname() + " 签到结果: "
+                                + (("OK".equals(jo.getString("message"))) ? "签到成功" : jo.getString("message")));
+                        Result result = new Result();
+                        result.setNickname(role.getNickname())
+                                .setAward(Res.rewards.get(role.getSignDay() - 1))
+                                .setSignDay(role.getSignDay())
+                                .setSignResult((("OK".equals(jo.getString("message"))) ? "签到成功" : jo.getString("message")));
+                        num.getAndIncrement();
+                        list.add(result);
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            });
+            //QQ消息推送
+            Sender sender = new Sender(user, list);
+            sender.send();
+        });
+    }
+
+    public static void getRoles(List<User> users) {
         logger.info("开始加载游戏角色");
-        List<GameRole> roles = new ArrayList<>();
-        cookies.forEach(item -> {
+        AtomicInteger num=new AtomicInteger();
+        users.forEach(item -> {
+            List<GameRole> roles = new ArrayList<>();
             Request request = new Request.Builder()
                     .url(Res.gameRole)
-                    .headers(getHeaders(item))
+                    .headers(getHeaders(item.getCookie()))
                     .build();
             Call call = client.newCall(request);
             try {
                 Response response = call.execute();
                 if (response.isSuccessful()) {
-                    JSONObject ret=JSONObject.parseObject(response.body().string());
-                    if("OK".equals(ret.getString("message"))){
-                        JSONObject jo = ret.getJSONObject("data")
-                                .getJSONArray("list")
-                                .getJSONObject(0);
-                        GameRole role = new GameRole();
-                        role.setCookie(item).setNickname(jo.getString("nickname"))
-                                .setGame_biz(jo.getString("game_biz"))
-                                .setLevel(jo.getInteger("level"))
-                                .setGameUid(jo.getLong("game_uid"))
-                                .setRegion_name(jo.getString("region_name"))
-                                .setRegion(jo.getString("region"));
-                        logger.info("加载到角色:'" + jo.getString("nickname") + "',UID:" + jo.getLong("game_uid"));
-                        roles.add(role);
-                    }else{
+                    JSONObject ret = JSONObject.parseObject(response.body().string());
+                    if ("OK".equals(ret.getString("message"))) {
+                        JSONArray jo = ret.getJSONObject("data")
+                                .getJSONArray("list");
+                        jo.forEach(roleStr -> {
+                            JSONObject roleJson = (JSONObject) roleStr;
+                            GameRole role = new GameRole();
+                            role.setCookie(item.getCookie()).setNickname(roleJson.getString("nickname"))
+                                    .setGame_biz(roleJson.getString("game_biz"))
+                                    .setLevel(roleJson.getInteger("level"))
+                                    .setGameUid(roleJson.getLong("game_uid"))
+                                    .setRegion_name(roleJson.getString("region_name"))
+                                    .setRegion(roleJson.getString("region"));
+                            logger.info("加载到角色:'" + roleJson.getString("nickname") + "',UID:" + roleJson.getLong("game_uid"));
+                            role.setSignDay(getSignDay(role));
+                            roles.add(role);
+                            num.getAndIncrement();
+                        });
+                    } else {
                         logger.info("游戏角色加载失败");
                     }
 
@@ -82,14 +155,14 @@ public class ApiTakumi {
                 logger.info("游戏角色加载错误!");
                 e.printStackTrace();
             }
+            item.setRole(roles);
         });
-        if (roles.size() > 0) {
-            logger.info("共加载到:" + roles.size() + "个游戏角色");
-            return roles;
+
+        if (num.get()>0) {
+            logger.info("共加载到:" + num + "个游戏角色");
         } else {
             logger.error("一个游戏角色也没有加载到，请检查cookie,程序退出");
             System.exit(0);
-            return null;
         }
     }
 

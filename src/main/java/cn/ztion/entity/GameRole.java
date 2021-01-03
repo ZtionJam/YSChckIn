@@ -15,4 +15,5 @@ public class GameRole {
     private String region;
     private String region_name;
     private String cookie;
+    private Integer signDay;
 }

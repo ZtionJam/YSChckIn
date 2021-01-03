@@ -1,0 +1,4 @@
+#每行一个 qq号====cookie
+
+QQ1====cookie1
+QQ2====cookie2
