@@ -45,7 +45,7 @@ public class Sender {
                 String avatarUrl = friend.getAvatarUrl();
                 try {
                     String file = DownImg.download(avatarUrl);
-                    InputStream is = new FileInputStream("cache/img/" + file);
+                    InputStream is = new FileInputStream("cache"+File.separator+"img"+File.separator+ file);
                     Image image = friend.uploadImage(is);
                     MessageChain messages = new MessageChainBuilder()
                             .append(image)
