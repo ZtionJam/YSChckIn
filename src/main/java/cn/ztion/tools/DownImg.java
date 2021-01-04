@@ -33,7 +33,7 @@ public class DownImg {
         byte[] bs = new byte[1024];
         int len;
         String file = UUID.randomUUID().toString().replace("-", "") + ".jpg";
-        OutputStream os = new FileOutputStream("cache/img/" + file);
+        OutputStream os = new FileOutputStream("cache"+File.separator+"img"+File.separator+ file);
         // 开始读取
         while ((len = is.read(bs)) != -1) {
             os.write(bs, 0, len);
