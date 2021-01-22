@@ -47,12 +47,14 @@ public class BotMaker {
             bc.fileBasedDeviceInfo();
             bot = BotFactoryJvm.newBot(Long.parseLong(map.get("id")), map.get("pass"), bc);
             register(bot);
-            logger.info("登录中......");
+            logger.info("QQ推送已开启，登录中......");
             try {
                 bot.login();
             }catch (Exception e){
-                logger.info("QQ账号登录失败,程序结束:"+e.getMessage());
-                System.exit(0);
+                logger.info("QQ账号登录失败,跳过登录，原因:"+e.getMessage());
+                logger.info("请检查QQ账号配置，Ctrl+C停止程序");
+//                System.exit(0);
+                return null;
             }
             if (bot.isOnline()) {
                 logger.info("账号登录成功:" + map.get("id"));
@@ -61,7 +63,7 @@ public class BotMaker {
                 return bot;
             }
         }else {
-            logger.info("未启用QQ推送，跳过机器人初始化");
+            logger.info("未启用QQ推送，跳过机器人初始化！");
         }
         return null;
     }

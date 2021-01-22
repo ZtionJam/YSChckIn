@@ -39,7 +39,7 @@ public class ApiTakumi {
                 }
             }
         } catch (Exception e) {
-            logger.info("获取签到信息失败");
+            logger.info("获取签到信息失败了");
         }
         return null;
     }
@@ -72,11 +72,13 @@ public class ApiTakumi {
         }
     }
 
+    static List<Result> list = new ArrayList<>();
     public static void signIn(List<User> users) {
         logger.info("开始签到");
         AtomicInteger num = new AtomicInteger();
         users.forEach(user -> {
-            List<Result> list = new ArrayList<>();
+            //清除上一次的数据
+            list.clear();
             user.getRole().forEach(role -> {
                 logger.info("-----------------------");
                 logger.info("开始签到角色:" + role.getNickname());

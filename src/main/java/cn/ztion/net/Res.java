@@ -15,7 +15,6 @@ public class Res {
     final static String signDay = "https://api-takumi.mihoyo.com/event/bbs_sign_reward/info?region={region}&act_id={act_id}&uid={uid}";
     //游戏信息
     final static String gameRole = "https://api-takumi.mihoyo.com/binding/api/getUserGameRolesByCookie?game_biz=hk4e_cn";
-
     //设备id
     final static String device_id = "94588081EDD446EFAA3A45B8CC436CCF";
     //软件版本
