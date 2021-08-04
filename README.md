@@ -1,4 +1,6 @@
 # YSChckIn
+#### 已退游，不搞了
+
 ### 原神米游社社区自动签到，java
 ### 支持了qq推送签到消息，在config.properties里面配置
 ### qq推送使用mirai框架，[mirai](https://github.com/mamoe/mirai)
